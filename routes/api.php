@@ -53,4 +53,4 @@ Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::post('cajachica/show',[CajachicaController::class,'show'])->middleware('access:read-caja');
     Route::get('cajachica/index',[CajachicaController::class,'index'])->middleware('access:read-caja');
     Route::post('auth/logout', [UserController::class, 'logout']);
-});\n
+});

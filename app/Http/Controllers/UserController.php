@@ -60,9 +60,13 @@ class UserController extends Controller
         $p_nombre = $request->s_nombre;
         $p_emil = $request->s_email;
         $p_password = Hash::make($request->s_password) ;
-        $p_identificador = $request->s_documento;\n\n        $respuesta = DB::select('SELECT * FROM fn_insertar_usuario(?,?,?,?)', [$p_nombre, $p_emil, $p_password, $p_identificador]);
+        $p_identificador = $request->s_documento;
 
-        return response()->json([$respuesta]);\n\n    }
+        $respuesta = DB::select('SELECT * FROM fn_insertar_usuario(?,?,?,?)', [$p_nombre, $p_emil, $p_password, $p_identificador]);
+
+        return response()->json([$respuesta]);
+
+    }
 
     public function index(Request $request)
     {
@@ -88,7 +92,9 @@ class UserController extends Controller
         $p_id = $request->s_id;
         $p_nombre = $request->s_nombre;
         $p_emil = $request->s_email;
-        $p_identificador = $request->s_documento;\n\n        $respuesta = DB::select('SELECT * FROM spu_users_upd(?,?,?,?)', [$p_id, $p_nombre, $p_emil, $p_identificador]);
+        $p_identificador = $request->s_documento;
+
+        $respuesta = DB::select('SELECT * FROM spu_users_upd(?,?,?,?)', [$p_id, $p_nombre, $p_emil, $p_identificador]);
 
         return response()->json([$respuesta]);
 
@@ -124,7 +130,9 @@ class UserController extends Controller
 
         return response()->json([$respuesta]);
 
-    }\n\n    public function asignacionRol(Request $request)
+    }
+
+    public function asignacionRol(Request $request)
     {
         $data = $request->validate([
             's_id_user' => 'required|integer|exists:users,id',
@@ -137,4 +145,4 @@ class UserController extends Controller
 
         return response()->json(['id' => $user->id, 'roles' => $user->getRoleNames()]);
     }
-}\n
+}
