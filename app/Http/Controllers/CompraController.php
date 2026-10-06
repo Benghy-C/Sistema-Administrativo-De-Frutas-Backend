@@ -152,12 +152,12 @@ class CompraController extends Controller
     {
         $request->validate([
             's_id_compra' => 'required',
-            's_id_user' => 'required'
+
 
         ]);
 
         $p_id_compra = $request->s_id_compra;
-        $p_id_user = $request->s_id_user;
+        $p_id_user = $request->user()->id;
 
         $respuesta = DB::select('SELECT * FROM public.cambiarEstadoCompra(?,?)', [ $p_id_compra, $p_id_user ]);
         return response()->json([$respuesta]);

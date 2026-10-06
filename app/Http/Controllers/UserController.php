@@ -11,42 +11,41 @@ class UserController extends Controller
 {
     public function login(Request $request)
     {
-        $request->validate([
-            'p_email' => 'required|email',
-            'p_password' => 'required|string',
+        $credentials = $request->validate([
+            'p_email' => 'required|email|max:255',
+            'p_password' => 'required|string|max:4096',
         ]);
 
-        $email = $request->p_email;
-        $password = $request->p_password;
+        $user = User::where('email', $credentials['p_email'])->first();
+        $passwordMatches = Hash::check($credentials['p_password'], $user?->password
+            ?? '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.');
 
-        $usuarios = DB::select('SELECT * FROM sp_login(?)', [$email]);
-
-        if (empty($usuarios)) {
+        if (!$user || !$passwordMatches || (int) $user->user_estado !== 1) {
             return response()->json(['mensaje' => 'Credenciales inválidas', 'error' => '100'], 401);
         }
 
-        $usuario = $usuarios[0];
+        $expiresAt = now()->addHours(8);
+        $token = $user->createToken('web-session', ['api', $user->passwordAbility()], $expiresAt);
 
-        if (Hash::check($password, $usuario->password_hash)) {
+        return response()->json([
+            'token' => $token->plainTextToken,
+            'expires_at' => $expiresAt->toIso8601String(),
+            'cliente' => [
+                'id' => $user->id,
+                'nombre' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->getRoleNames(),
+                'permissions' => $user->getAllPermissions()->pluck('name'),
+            ],
+            'error' => '0',
+        ])->header('Cache-Control', 'no-store');
+    }
 
-            $userModel = new User((array) $usuario);
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
 
-            $userModel->id = $usuario->id;
-
-            // Genero el Token 
-            $token = $userModel->createToken('auth_token')->plainTextToken;
-
-            unset($usuario->password_hash);
-
-
-            return response()->json([
-                'token' => $token,
-                'cliente' => $usuario,
-                'error' => '0'
-            ], 200);
-        } else {
-            return response()->json(['mensaje' => 'Credenciales inválidas', 'error' => '100'], 401);
-        }
+        return response()->noContent();
     }
 
     public function store(Request $request)
@@ -61,16 +60,10 @@ class UserController extends Controller
         $p_nombre = $request->s_nombre;
         $p_emil = $request->s_email;
         $p_password = Hash::make($request->s_password) ;
-        $p_identificador = $request->s_documento;
+        $p_identificador = $request->s_documento;\n\n        $respuesta = DB::select('SELECT * FROM fn_insertar_usuario(?,?,?,?)', [$p_nombre, $p_emil, $p_password, $p_identificador]);
 
+        return response()->json([$respuesta]);\n\n    }
 
-        $respuesta = DB::select('SELECT * FROM fn_insertar_usuario(?,?,?,?)', [$p_nombre, $p_emil, $p_password, $p_identificador]);
-
-        return response()->json([$respuesta]);
-
-        //al del front, te retorno un mensaje y un error si el valor del error es 0 esta bien, caso contrario algo fallo
-    }
-    //para listar usuarios
     public function index(Request $request)
     {
         $request->validate([
@@ -95,10 +88,7 @@ class UserController extends Controller
         $p_id = $request->s_id;
         $p_nombre = $request->s_nombre;
         $p_emil = $request->s_email;
-        $p_identificador = $request->s_documento;
-
-
-        $respuesta = DB::select('SELECT * FROM spu_users_upd(?,?,?,?)', [$p_id, $p_nombre, $p_emil, $p_identificador]);
+        $p_identificador = $request->s_documento;\n\n        $respuesta = DB::select('SELECT * FROM spu_users_upd(?,?,?,?)', [$p_id, $p_nombre, $p_emil, $p_identificador]);
 
         return response()->json([$respuesta]);
 
@@ -128,30 +118,23 @@ class UserController extends Controller
         $p_id = $request->s_id_user;
 
         $respuesta = DB::select('SELECT * FROM spu_cambiar_estado(?)', [ $p_id]);
+        if (isset($respuesta[0]) && (int) $respuesta[0]->error === 0) {
+            User::findOrFail($p_id)->tokens()->delete();
+        }
 
         return response()->json([$respuesta]);
 
-    }
-
-    
-
-    //aun esta en pruba
-    public function asignacionRol(Request $request)
+    }\n\n    public function asignacionRol(Request $request)
     {
-        $request->validate([
-            's_id_user' => 'required',
-            's_id_rol' => 'required',
-            
+        $data = $request->validate([
+            's_id_user' => 'required|integer|exists:users,id',
+            's_id_rol' => 'required|integer|exists:roles,id',
         ]);
 
-        $p_idusuario = $request->s_id_user;
-        $p__idrol = $request->s_id_rol;
+        $user = User::findOrFail($data['s_id_user']);
+        $role = \Spatie\Permission\Models\Role::where('guard_name', 'web')->findOrFail($data['s_id_rol']);
+        $user->syncRoles([$role]);
 
-        $usuario = User::find(1); 
-
-        $usuario->assignRole('viewer');
-
-        return response()->json([$usuario]);
-
+        return response()->json(['id' => $user->id, 'roles' => $user->getRoleNames()]);
     }
-}
+}\n

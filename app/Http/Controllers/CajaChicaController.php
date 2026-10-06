@@ -13,13 +13,13 @@ class CajaChicaController extends Controller
         $request->validate([
             's_monto' => 'required',
             's_desc' => 'required|string',
-            's_id_user' => 'required',
+
             's_fecha' => 'required'
         ]);
 
         $p_monto = $request->s_monto;
         $p_desc = $request->s_desc;
-        $p_id_user = $request->s_id_user;
+        $p_id_user = $request->user()->id;
         $p_fecha = $request->s_fecha;
 
         $respuesta = DB::select('SELECT * FROM sp_ins_cjchica(?,?,?,?)', [$p_monto, $p_desc, $p_id_user, $p_fecha]);
