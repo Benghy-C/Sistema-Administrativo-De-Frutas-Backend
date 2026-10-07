@@ -24,6 +24,7 @@ class UserController extends Controller
             return response()->json(['mensaje' => 'Credenciales inválidas', 'error' => '100'], 401);
         }
 
+        $access = $user->apiAccess();
         $expiresAt = now()->addHours(8);
         $token = $user->createToken('web-session', ['api', $user->passwordAbility()], $expiresAt);
 
@@ -34,8 +35,8 @@ class UserController extends Controller
                 'id' => $user->id,
                 'nombre' => $user->name,
                 'email' => $user->email,
-                'roles' => $user->getRoleNames(),
-                'permissions' => $user->getAllPermissions()->pluck('name'),
+                'roles' => $access['roles'],
+                'permissions' => $access['permissions'],
             ],
             'error' => '0',
         ])->header('Cache-Control', 'no-store');

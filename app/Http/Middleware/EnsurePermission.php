@@ -10,11 +10,11 @@ class EnsurePermission
 {
     public function handle(Request $request, Closure $next, string ...$permissions): Response
     {
-        $user = $request->user();
+        $access = $request->user()->apiAccess();
         foreach ($permissions as $permission) {
             if ($permission === 'admin'
-                ? $user->hasRole('admin', 'web')
-                : $user->checkPermissionTo($permission, 'web')) {
+                ? in_array('admin', $access['roles'], true)
+                : in_array($permission, $access['permissions'], true)) {
                 return $next($request);
             }
         }

@@ -16,12 +16,13 @@ Route::post('auth/login', [UserController::class, 'login'])->middleware('throttl
 Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::get('/user', function (Request $request) {
         $user = $request->user();
+        $access = $user->apiAccess();
         return response()->json([
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'roles' => $user->getRoleNames(),
-            'permissions' => $user->getAllPermissions()->pluck('name'),
+            'roles' => $access['roles'],
+            'permissions' => $access['permissions'],
         ])->header('Cache-Control', 'no-store');
     });
     Route::post('auth/listar-usuarios',[UserController::class,'index'])->middleware('access:admin');
