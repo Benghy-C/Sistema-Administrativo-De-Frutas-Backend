@@ -30,6 +30,7 @@ Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::post('compra/editar-estado',[CompraController::class,'editarEstado'])->middleware('access:delete-compra');
     Route::post('compra/index',[CompraController::class,'listarCompra'])->middleware('access:read-compra');
     Route::post('compra/show',[CompraController::class,'show'])->middleware('access:read-compra');
+    Route::get('compra/{id}/edicion', [\App\Http\Controllers\OrderEditorController::class, 'show'])->middleware('access:update-compra');
     Route::post('compra/detalle', [CompraController::class, 'detalle'])->middleware('access:read-compra');
     Route::post('compra/one-frutas',[CompraController::class,'onePeido'])->middleware('access:read-compra');
     Route::get('camara/index',[CamaraController::class,'index'])->middleware('access:read-camara');
