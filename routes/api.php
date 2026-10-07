@@ -14,17 +14,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('auth/login', [UserController::class, 'login'])->middleware('throttle:login');
 
 Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
-    Route::get('/user', function (Request $request) {
-        $user = $request->user();
-        $access = $user->apiAccess();
-        return response()->json([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'roles' => $access['roles'],
-            'permissions' => $access['permissions'],
-        ])->header('Cache-Control', 'no-store');
-    });
+    Route::get('/user', [\App\Http\Controllers\SessionController::class, 'show']);
     Route::post('auth/listar-usuarios',[UserController::class,'index'])->middleware('access:admin');
     Route::post('auth/make/user',[UserController::class,'store'])->middleware('access:admin');
     Route::post('auth/update/user',[UserController::class,'editarUsuario'])->middleware('access:admin');
