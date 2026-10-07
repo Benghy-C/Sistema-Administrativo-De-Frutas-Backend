@@ -193,6 +193,19 @@ class CompraController extends Controller
 
     }
 
+    public function detalle(Request $request)
+    {
+        $data = $request->validate(['s_id_compra' => 'required|integer|min:1']);
+        $id = $data['s_id_compra'];
+        $order = DB::select('SELECT * FROM public.sp_listar_datos_compra(?)', [$id]);
+        if (!$order) {
+            return response()->json(['message' => 'Pedido no encontrado.'], 404);
+        }
+
+        $items = DB::select('SELECT * FROM public.sp_listar_frutas_compra(?)', [$id]);
+        return response()->json(['order' => $order, 'items' => $items]);
+    }
+
     public function onePeido(Request $request)
     {
         $request->validate([
