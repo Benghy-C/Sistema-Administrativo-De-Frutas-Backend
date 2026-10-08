@@ -1,5 +1,5 @@
 <?php
-
+    
 use App\Http\Controllers\CamaraController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CompraController;
@@ -8,10 +8,13 @@ use App\Http\Controllers\FrutasController;
 use App\Http\Controllers\ProvedorController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CajaChicaController;
+use App\Http\Controllers\VentaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [UserController::class, 'login'])->middleware('throttle:login');
+
+Route::post('venta/store',[VentaController::class,'store']);
 
 Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::get('/user', [\App\Http\Controllers\SessionController::class, 'show']);
@@ -47,4 +50,11 @@ Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::post('cajachica/show',[CajachicaController::class,'show'])->middleware('access:read-caja');
     Route::get('cajachica/index',[CajachicaController::class,'index'])->middleware('access:read-caja');
     Route::post('auth/logout', [UserController::class, 'logout']);
+    //vetna
+    // ->middleware('access:create-venta')
+
+
+    
+
+
 });
