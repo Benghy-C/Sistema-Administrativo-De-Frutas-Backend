@@ -15,6 +15,7 @@ Route::post('auth/login', [UserController::class, 'login'])->middleware('throttl
 
 Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::get('/user', [\App\Http\Controllers\SessionController::class, 'show']);
+    Route::get('auth/roles', [UserController::class, 'roles'])->middleware('access:admin');
     Route::post('auth/listar-usuarios',[UserController::class,'index'])->middleware('access:admin');
     Route::post('auth/make/user',[UserController::class,'store'])->middleware('access:admin');
     Route::post('auth/update/user',[UserController::class,'editarUsuario'])->middleware('access:admin');
