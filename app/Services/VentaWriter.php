@@ -180,7 +180,8 @@ class VentaWriter
             $this->rechazar('Selecciona un cliente activo.');
         }
 
-        if (!$fruta || (int) $fruta->estado !== 1) {
+        if (!$fruta || (int) $fruta->estado !== 1
+            || !in_array(mb_strtolower(trim($fruta->descripcion)), ['platano', 'plátano'], true)) {
             $this->rechazar('Selecciona una fruta habilitada.');
         }
     }

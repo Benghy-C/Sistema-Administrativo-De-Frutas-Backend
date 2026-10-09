@@ -71,6 +71,11 @@ class CompraController extends Controller
 
         foreach (['A', 'B', 'C'] as $calidad) {
             $cajas = (int) $datos['s_cant'.$calidad];
+            if ($edicion && $cajas > 0 && !isset($datos['s_precio'.$calidad])) {
+                throw ValidationException::withMessages([
+                    's_precio'.$calidad => 'Registra el precio de la calidad '.$calidad.'.',
+                ]);
+            }
             $precio = $cajas > 0 ? ($datos['s_precio'.$calidad] ?? 0) : 0;
             $datos['s_precio'.$calidad] = $precio;
             $cantidad += $cajas;

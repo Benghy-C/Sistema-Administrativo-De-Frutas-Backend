@@ -9,7 +9,9 @@ class FrutasController extends Controller
     public function index()
     {
         return response()->json([
-            DB::table('fruta')->where('estado', 1)->orderBy('descripcion')
+            DB::table('fruta')->where('estado', 1)
+                ->whereRaw("LOWER(TRIM(descripcion)) IN ('platano', 'plátano')")
+                ->orderBy('descripcion')
                 ->get(['id', 'descripcion', 'estado']),
         ]);
     }

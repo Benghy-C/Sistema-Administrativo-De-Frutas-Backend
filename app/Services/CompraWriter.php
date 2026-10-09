@@ -43,6 +43,7 @@ class CompraWriter
             DB::table('camara_refigeracion')->insert([
                 'id_compra' => $id,
                 'id_fruta' => $datos['s_id_fru'],
+                'fecha_registro' => now('America/Lima'),
                 'cantidad_camara' => $datos['s_cantidad'],
                 'canta' => $datos['s_cantA'],
                 'cantb' => $datos['s_cantB'],
@@ -225,7 +226,8 @@ class CompraWriter
             $this->rechazar('Selecciona un proveedor activo.');
         }
 
-        if (!$fruta || (int) $fruta->estado !== 1) {
+        if (!$fruta || (int) $fruta->estado !== 1
+            || !in_array(mb_strtolower(trim($fruta->descripcion)), ['platano', 'plátano'], true)) {
             $this->rechazar('Selecciona una fruta habilitada.');
         }
     }

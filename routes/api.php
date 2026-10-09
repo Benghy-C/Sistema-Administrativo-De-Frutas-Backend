@@ -73,6 +73,12 @@ Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
         ->middleware('access:read-caja,create-caja,admin');
     Route::post('categorias-gasto', [OperationalController::class, 'guardarCategoria'])
         ->middleware('access:admin');
+    Route::get('indicadores', [\App\Http\Controllers\ReportsController::class, 'indicadores'])
+        ->middleware('access:read-dashboard');
+    Route::get('reportes/catalogos', [\App\Http\Controllers\ReportsController::class, 'catalogos'])
+        ->middleware('access:read-dashboard');
+    Route::get('reportes', [\App\Http\Controllers\ReportsController::class, 'index'])
+        ->middleware('access:read-dashboard');
     Route::get('historial', [OperationalController::class, 'historial'])
         ->middleware('access:admin');
     Route::post('auth/logout', [UserController::class, 'logout']);

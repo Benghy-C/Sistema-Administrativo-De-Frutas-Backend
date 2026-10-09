@@ -23,7 +23,8 @@ class CamaraController extends Controller
             'proveedor.nombre as provedor',
             'fruta.descripcion as fruta',
             'camara.cantidad_camara as cantidad_original',
-            'compra.fecha',
+            'camara.fecha_registro as fecha',
+            'compra.fecha as fecha_compra',
             'compra.estado',
             'camara.id_camara as camara_id',
             'compra.id'
