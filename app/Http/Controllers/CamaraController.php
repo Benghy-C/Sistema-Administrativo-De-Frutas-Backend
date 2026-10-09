@@ -25,6 +25,7 @@ class CamaraController extends Controller
             'camara.cantidad_camara as cantidad_original',
             'compra.fecha',
             'compra.estado',
+            'camara.id_camara as camara_id',
             'compra.id'
         )->selectRaw(
             'COALESCE(camara.canta, 0) + COALESCE(camara.cantb, 0) + '.

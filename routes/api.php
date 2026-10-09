@@ -10,6 +10,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CajaChicaController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\OperationalController;
+use App\Http\Controllers\PerdidaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -64,9 +65,9 @@ Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::post('cajachica/store',[CajachicaController::class,'store'])->middleware('access:create-caja');
     Route::post('cajachica/show',[CajachicaController::class,'show'])->middleware('access:read-caja');
     Route::get('cajachica/index',[CajachicaController::class,'index'])->middleware('access:read-caja');
-    Route::get('perdidas', [OperationalController::class, 'perdidas'])
+    Route::get('perdidas', [PerdidaController::class, 'index'])
         ->middleware('access:read-camara');
-    Route::post('perdidas', [OperationalController::class, 'registrarPerdida'])
+    Route::post('perdidas', [PerdidaController::class, 'store'])
         ->middleware('access:admin');
     Route::get('categorias-gasto', [OperationalController::class, 'categorias'])
         ->middleware('access:read-caja,create-caja,admin');
