@@ -44,7 +44,7 @@ class CompraController extends Controller
     private function validarCompra(Request $request, bool $edicion = false): array
     {
         $reglas = [
-            's_codigo' => 'required|string|max:50',
+            's_codigo' => 'required|string|max:15',
             's_id_provedor' => 'required|integer|min:1|max:2147483647',
             's_fecha' => 'required|date_format:Y-m-d',
             's_observacion' => 'nullable|string|max:5000',
