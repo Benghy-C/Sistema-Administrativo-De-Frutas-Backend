@@ -31,7 +31,7 @@ class CamaraController extends Controller
                 INNER JOIN public.proveedores AS proveedor
                     ON proveedor.id = compra.id_proveedor
                 WHERE compra.estado = 1
-                ORDER BY camara.id_camara DESC
+                ORDER BY camara.id_camara ASC
             SQL
         );
 

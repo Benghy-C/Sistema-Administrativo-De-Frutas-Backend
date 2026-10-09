@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [UserController::class, 'login'])->middleware('throttle:login');
 
-Route::post('venta/store',[VentaController::class,'store']);
+
 
 Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::get('/user', [\App\Http\Controllers\SessionController::class, 'show']);
@@ -45,6 +45,8 @@ Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::post('cliente/store',[ClienteController::class,'store'])->middleware('access:create-ajustes');
     Route::post('cliente/update',[ClienteController::class,'update'])->middleware('access:update-ajustes');
     Route::post('cliente/cambiar-estado',[ClienteController::class,'changer'])->middleware('access:delete-ajustes');
+    Route::post('venta/store', [VentaController::class, 'store'])
+        ->middleware('access:create-venta');
     Route::post('envio/store',[EnvioController::class,'store'])->middleware('access:create-venta');
     Route::post('cajachica/store',[CajachicaController::class,'store'])->middleware('access:create-caja');
     Route::post('cajachica/show',[CajachicaController::class,'show'])->middleware('access:read-caja');

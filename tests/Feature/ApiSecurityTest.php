@@ -51,7 +51,7 @@ class ApiSecurityTest extends TestCase
         $role->givePermissionTo(Permission::create(['name' => 'read-compra', 'guard_name' => 'web']));
         $user->assignRole($role);
         $token = $user->createToken('web-session', [$user->passwordAbility()], now()->addHour())->plainTextToken;
-        foreach (['auth/listar-usuarios', 'auth/cambiar-contra/user', 'compra/store', 'compra/update', 'envio/store'] as $path) {
+        foreach (['auth/listar-usuarios', 'auth/cambiar-contra/user', 'compra/store', 'compra/update', 'envio/store', 'venta/store'] as $path) {
             $this->withToken($token)->postJson('/api/'.$path, [])->assertForbidden();
         }
     }
@@ -99,6 +99,32 @@ class ApiSecurityTest extends TestCase
         $this->withToken($expired)->getJson('/api/user')->assertUnauthorized();
     }
 
+    public function test_shipment_requires_permission_and_an_active_session(): void
+    {
+        $user = $this->user();
+        $user->givePermissionTo(Permission::create([
+            'name' => 'create-venta',
+            'guard_name' => 'web',
+        ]));
+
+        $token = $user->createToken(
+            'web-session',
+            [$user->passwordAbility()],
+            now()->addHour()
+        )->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/venta/store', [])
+            ->assertUnprocessable();
+
+        $user->user_estado = 0;
+        $user->save();
+        $this->app['auth']->forgetGuards();
+
+        $this->withToken($token)
+            ->postJson('/api/venta/store', [])
+            ->assertUnauthorized();
+    }
     public function test_api_returns_json_401_without_accept_header(): void
     {
         $this->post('/api/compra/store', [])->assertUnauthorized()->assertJsonStructure(['message']);
