@@ -12,9 +12,12 @@ use Tests\TestCase;
 
 class ApiSecurityTest extends TestCase
 {
+    use \Tests\Support\CreatesActivitySchema;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->createActivitySchema();
         foreach (['0001_01_01_000000_create_users_table.php', '2026_07_24_001351_create_personal_access_tokens_table.php', '2026_07_27_160155_create_permission_tables.php'] as $file) {
             (require database_path('migrations/'.$file))->up();
         }
@@ -31,7 +34,8 @@ class ApiSecurityTest extends TestCase
         foreach (app('router')->getRoutes() as $route) {
             if (!str_starts_with($route->uri(), 'api/') || $route->uri() === 'api/auth/login') continue;
             $method = in_array('GET', $route->methods()) ? 'GET' : 'POST';
-            $this->json($method, '/'.$route->uri(), [])->assertUnauthorized();
+            $url = preg_replace('/\{[^}]+\}/', '1', '/'.$route->uri());
+            $this->json($method, $url, [])->assertUnauthorized();
         }
     }
 

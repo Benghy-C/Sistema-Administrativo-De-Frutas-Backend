@@ -7,57 +7,68 @@ use Illuminate\Support\Facades\DB;
 
 class CamaraController extends Controller
 {
+    private function lotes()
+    {
+        return DB::table('camara_refigeracion as camara')
+            ->join('compra', 'compra.id', '=', 'camara.id_compra')
+            ->join('fruta', 'fruta.id', '=', 'camara.id_fruta')
+            ->join('proveedores as proveedor', 'proveedor.id', '=', 'compra.id_proveedor')
+            ->where('compra.estado', 1);
+    }
+
+    private function datosLote()
+    {
+        return $this->lotes()->select(
+            'compra.codigo_compra as codigo',
+            'proveedor.nombre as provedor',
+            'fruta.descripcion as fruta',
+            'camara.cantidad_camara as cantidad_original',
+            'compra.fecha',
+            'compra.estado',
+            'compra.id'
+        )->selectRaw(
+            'COALESCE(camara.canta, 0) + COALESCE(camara.cantb, 0) + '.
+            'COALESCE(camara.cantc, 0) AS cantidad, '.
+            'COALESCE(camara.canta, 0) AS tipoa, '.
+            'COALESCE(camara.cantb, 0) AS tipob, '.
+            'COALESCE(camara.cantc, 0) AS tipoc'
+        );
+    }
+
     public function index()
     {
-
-        $respuesta = DB::select(
-            <<<'SQL'
-                SELECT
-                    compra.codigo_compra AS codigo,
-                    proveedor.nombre AS provedor,
-                    fruta.descripcion AS fruta,
-                    camara.cantidad_camara AS cantidad,
-                    compra.fecha,
-                    compra.estado,
-                    compra.id,
-                    COALESCE(camara.canta, 0) AS tipoa,
-                    COALESCE(camara.cantb, 0) AS tipob,
-                    COALESCE(camara.cantc, 0) AS tipoc
-                FROM public.camara_refigeracion AS camara
-                INNER JOIN public.compra AS compra
-                    ON compra.id = camara.id_compra
-                INNER JOIN public.fruta AS fruta
-                    ON fruta.id = camara.id_fruta
-                INNER JOIN public.proveedores AS proveedor
-                    ON proveedor.id = compra.id_proveedor
-                WHERE compra.estado = 1
-                ORDER BY camara.id_camara ASC
-            SQL
-        );
+        $respuesta = $this->datosLote()
+            ->orderBy('camara.id_camara')
+            ->get();
 
         return response()->json([$respuesta]);
     }
 
     public function listarCantidades()
     {
-
-        $respuesta = DB::select('select * from sp_listar_cantidades() ');
+        $respuesta = $this->lotes()->selectRaw(
+            'COUNT(*) AS totallotes, '.
+            'COALESCE(SUM(camara.canta), 0) AS cantidada, '.
+            'COALESCE(SUM(camara.cantb), 0) AS cantidadb, '.
+            'COALESCE(SUM(camara.cantc), 0) AS cantidadc'
+        )->get();
 
         return response()->json([$respuesta]);
     }
 
     public function listarOneLote(Request $request)
     {
-
-        $request->validate([
-            'p_id_lote' => 'required',
-
+        $datos = $request->validate([
+            'p_id_lote' => 'required|integer|min:1',
         ]);
 
-        $s_id_lote = $request->p_id_lote;
+        $respuesta = $this->datosLote()
+            ->where('compra.id', $datos['p_id_lote'])
+            ->orderBy('camara.id_camara')
+            ->first();
 
-        $respuesta = DB::select('select * from sp_listar_one_camara0(?)', [$s_id_lote]);
+        abort_unless($respuesta, 404, 'No se encontró el lote activo.');
 
-        return response()->json([$respuesta]);
+        return response()->json([[$respuesta]]);
     }
 }

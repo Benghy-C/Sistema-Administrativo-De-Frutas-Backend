@@ -12,9 +12,12 @@ use Tests\TestCase;
 
 class UserRolesTest extends TestCase
 {
+    use \Tests\Support\CreatesActivitySchema;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->createActivitySchema();
         if (config('database.default') !== 'sqlite' || config('database.connections.sqlite.database') !== ':memory:') {
             throw new \RuntimeException('Las pruebas requieren SQLite en memoria.');
         }

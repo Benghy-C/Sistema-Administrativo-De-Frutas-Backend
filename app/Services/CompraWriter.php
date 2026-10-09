@@ -27,7 +27,7 @@ class CompraWriter
                 $this->consumido($detalle, $lote);
                 $this->comprobarReintento($existente, $detalle, $datos);
 
-                return $this->respuesta($existente->id, 1);
+                return $this->respuesta($existente->id, 1, true);
             }
 
             $this->validarCatalogo($datos);
@@ -276,13 +276,14 @@ class CompraWriter
         }
     }
 
-    private function respuesta(int $id, int $estado): array
+    private function respuesta(int $id, int $estado, bool $reintento = false): array
     {
         return [[
             'mensa' => 'Compra guardada correctamente.',
             'error' => 0,
             'numid' => $id,
             'estado' => $estado,
+            'reintento' => $reintento,
         ]];
     }
 

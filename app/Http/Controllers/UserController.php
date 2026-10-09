@@ -149,17 +149,19 @@ class UserController extends Controller
 
     public function cambiarContraUsuario(Request $request)
     {
-        $request->validate([
-            's_id_user' => 'required|integer',
-            's_password' => 'required|string|min:8',
+        $datos = $request->validate([
+            's_id_user' => 'required|integer|exists:users,id',
+            's_password' => 'required|string|min:8|max:4096|confirmed',
         ]);
 
-        $respuesta = DB::select('SELECT * FROM spu_users_cambiar_contra(?,?)', [
-            $request->s_id_user,
-            Hash::make($request->s_password),
-        ]);
+        DB::transaction(function () use ($datos) {
+            $usuario = User::lockForUpdate()->findOrFail($datos['s_id_user']);
+            $usuario->password = Hash::make($datos['s_password']);
+            $usuario->save();
+            $usuario->tokens()->delete();
+        });
 
-        return response()->json([$respuesta]);
+        return response()->json([[['error' => 0, 'mensa' => 'Contraseña actualizada.']]]);
     }
 
     public function cambiarEstadoUsuario(Request $request)

@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'active-session' => \App\Http\Middleware\EnsureActiveSession::class,
             'access' => \App\Http\Middleware\EnsurePermission::class,
+            'audit-admin' => \App\Http\Middleware\RecordAdministrativeActivity::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
