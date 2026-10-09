@@ -119,6 +119,12 @@ class ReportsController extends Controller
                 ->pluck('valor', 'mes');
         }
 
+        $perdidasPorCalidad = DB::query()->fromSub(clone $perdidas, 'r')
+            ->select('calidad')
+            ->selectRaw("TO_CHAR(CAST(fecha AS DATE), 'YYYY-MM') AS mes")
+            ->selectRaw('SUM(cajas) AS cajas')
+            ->groupByRaw("TO_CHAR(CAST(fecha AS DATE), 'YYYY-MM')")
+            ->groupBy('calidad')->get()->groupBy('mes');
         $meses = [];
         for ($mes = $desde; $mes <= $hasta; $mes = $mes->addMonth()) {
             $clave = $mes->format('Y-m');
@@ -126,6 +132,13 @@ class ReportsController extends Controller
             foreach ($series as $nombre => $valores) {
                 $fila[$nombre] = (float) ($valores[$clave] ?? 0);
             }
+            $calidadesPerdidas = [];
+            $registros = $perdidasPorCalidad->get($clave, collect());
+            foreach (['A', 'B', 'C'] as $calidad) {
+                $registro = $registros->firstWhere('calidad', $calidad);
+                $calidadesPerdidas[$calidad] = (int) ($registro->cajas ?? 0);
+            }
+            $fila['perdidas_calidad'] = $calidadesPerdidas;
             $meses[] = $fila;
         }
 
