@@ -37,9 +37,9 @@ abstract class ContactController extends Controller
     {
         return [
             's_nombre' => 'required|string|max:255',
-            's_cel' => 'nullable|string|max:30',
-            's_telefono' => 'nullable|string|max:30',
-            's_correo' => 'required|email|max:255',
+            's_cel' => 'nullable|required_without:s_correo|regex:/^\d{9}$/',
+            's_telefono' => 'nullable|regex:/^\d{6,15}$/',
+            's_correo' => 'nullable|required_without:s_cel|email|max:255',
             's_descripcion' => 'nullable|string|max:1000',
         ];
     }

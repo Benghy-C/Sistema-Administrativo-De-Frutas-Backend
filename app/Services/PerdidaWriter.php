@@ -36,6 +36,12 @@ class PerdidaWriter
             }
 
             [$lote, $detalle] = $this->leerLote($datos['camara_id']);
+            $ingreso = substr((string) $lote->fecha_registro, 0, 10);
+            if ($ingreso !== '' && $datos['fecha'] < $ingreso) {
+                throw ValidationException::withMessages([
+                    'fecha' => 'La fecha de la pérdida no puede ser anterior al ingreso del lote.',
+                ]);
+            }
             $campo = 'cant'.strtolower($datos['calidad']);
             $antes = filter_var($lote->$campo, FILTER_VALIDATE_INT);
 
@@ -43,7 +49,9 @@ class PerdidaWriter
                 $this->rechazar('El lote tiene un saldo inválido. Revisa sus existencias.');
             }
             if ($datos['cantidad'] > $antes) {
-                $this->rechazar('La pérdida supera las cajas disponibles de esa calidad.');
+                throw ValidationException::withMessages([
+                    'cantidad' => 'Solo quedan '.$antes.' cajas de calidad '.$datos['calidad'].'.',
+                ]);
             }
 
             $precio = 'precio'.strtolower($datos['calidad']);

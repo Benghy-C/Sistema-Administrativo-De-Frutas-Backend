@@ -57,9 +57,9 @@ class UserController extends Controller
         $data = $request->validate([
             's_nombre' => 'required|string|max:255',
             's_email' => ['required', 'email', 'max:255', $this->uniqueEmail()],
-            's_documento' => ['required', 'regex:/^\d{8}$/'],
+            's_documento' => ['required', 'regex:/^\d{8}$/', Rule::unique('users', 'identificador')],
             's_id_rol' => ['required', 'integer', Rule::exists('roles', 'id')->where('guard_name', 'web')],
-            's_password' => 'required|string|min:8|max:4096',
+            's_password' => 'required|string|min:8|max:4096|confirmed',
         ]);
 
         $user = DB::transaction(function () use ($data) {
@@ -131,7 +131,7 @@ class UserController extends Controller
         $data = $request->validate([
             's_nombre' => 'required|string|max:255',
             's_email' => ['required', 'email', 'max:255', $this->uniqueEmail((int) $request->s_id)],
-            's_documento' => ['required', 'regex:/^\d{8}$/'],
+            's_documento' => ['required', 'regex:/^\d{8}$/', Rule::unique('users', 'identificador')->ignore($request->integer('s_id'))],
             's_id_rol' => ['required', 'integer', Rule::exists('roles', 'id')->where('guard_name', 'web')],
         ]);
 
@@ -170,19 +170,29 @@ class UserController extends Controller
 
     public function cambiarEstadoUsuario(Request $request)
     {
-        $request->validate([
-            's_id_user' => 'required',
+        $datos = $request->validate([
+            's_id_user' => 'required|integer|exists:users,id',
         ]);
 
-        $p_id = $request->s_id_user;
+        $respuesta = DB::transaction(function () use ($datos) {
+            $administradores = User::role('admin')->where('user_estado', 1)
+                ->lockForUpdate()->get();
+            $usuario = User::lockForUpdate()->findOrFail($datos['s_id_user']);
+            if ((int) $usuario->user_estado === 1 && $usuario->hasRole('admin')
+                && $administradores->count() <= 1) {
+                throw ValidationException::withMessages([
+                    's_id_user' => 'No puedes desactivar al único administrador activo.',
+                ]);
+            }
+            $estado = (int) $usuario->user_estado === 1 ? 0 : 1;
+            $usuario->user_estado = $estado;
+            $usuario->save();
+            if ($estado === 0) $usuario->tokens()->delete();
 
-        $respuesta = DB::select('SELECT * FROM spu_cambiar_estado(?)', [$p_id]);
-        if (isset($respuesta[0]) && (int) $respuesta[0]->error === 0) {
-            User::findOrFail($p_id)->tokens()->delete();
-        }
+            return [['error' => 0, 'mensaje' => $estado ? 'Usuario activado.' : 'Usuario desactivado.']];
+        });
 
         return response()->json([$respuesta]);
-
     }
 
     public function asignacionRol(Request $request)

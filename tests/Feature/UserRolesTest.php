@@ -35,7 +35,7 @@ class UserRolesTest extends TestCase
 
     private function payload(int $role): array
     {
-        return ['s_nombre' => 'Prueba', 's_email' => 'new@example.invalid', 's_password' => 'Password-123', 's_documento' => '12345678', 's_id_rol' => $role];
+        return ['s_nombre' => 'Prueba', 's_email' => 'new@example.invalid', 's_password' => 'Password-123', 's_password_confirmation' => 'Password-123', 's_documento' => '12345678', 's_id_rol' => $role];
     }
 
     public function test_create_assigns_role_and_login_returns_permissions(): void
@@ -105,5 +105,33 @@ class UserRolesTest extends TestCase
         $data['s_email'] = 'ADMIN@example.invalid';
         $this->postJson('/api/auth/make/user', $data)->assertUnprocessable()->assertJsonValidationErrors('s_email');
         $this->assertDatabaseCount('users',1);
+    }
+    public function test_duplicate_dni_is_rejected(): void
+    {
+        $role = Role::create(['name' => 'viewer', 'guard_name' => 'web']);
+        User::create(['name' => 'Existente', 'email' => 'existing@example.invalid',
+            'password' => 'password'])->forceFill(['identificador' => '12345678'])->save();
+        $this->postJson('/api/auth/make/user', $this->payload($role->id))
+            ->assertUnprocessable()->assertJsonValidationErrors('s_documento');
+        $this->assertDatabaseMissing('users', ['email' => 'new@example.invalid']);
+    }
+
+    public function test_new_password_requires_matching_confirmation(): void
+    {
+        $role = Role::create(['name' => 'viewer', 'guard_name' => 'web']);
+        $data = $this->payload($role->id);
+        $data['s_password_confirmation'] = 'Otra-clave';
+        $this->postJson('/api/auth/make/user', $data)
+            ->assertUnprocessable()->assertJsonValidationErrors('s_password');
+        $this->assertDatabaseMissing('users', ['email' => 'new@example.invalid']);
+    }
+
+    public function test_last_active_administrator_cannot_be_deactivated(): void
+    {
+        $admin = User::where('email', 'admin@example.invalid')->firstOrFail();
+        $this->postJson('/api/auth/cambiar-estado/user', ['s_id_user' => $admin->id])
+            ->assertUnprocessable()->assertJsonValidationErrors('s_id_user');
+        $this->assertSame(1, $admin->fresh()->user_estado);
+        $this->assertSame(1, $admin->tokens()->count());
     }
 }

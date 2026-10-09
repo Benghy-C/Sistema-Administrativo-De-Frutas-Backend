@@ -20,7 +20,7 @@ class OperationalController extends Controller
 
     public function guardarCategoria(Request $request)
     {
-        $request->merge(['nombre' => trim((string) $request->input('nombre', ''))]);
+        $request->merge(['nombre' => preg_replace('/\s+/u', ' ', trim((string) $request->input('nombre', '')))]);
         $datos = $request->validate([
             'id' => 'nullable|integer|min:1',
             'nombre' => 'required|string|max:80',
@@ -43,7 +43,12 @@ class OperationalController extends Controller
                     $duplicado->where('id', '!=', $id);
                 }
 
-                if ($duplicado->exists()) {
+                if ($categoria = $duplicado->first()) {
+                    if (!$categoria->activa) {
+                        throw ValidationException::withMessages([
+                            'nombre' => 'Ya existe una categoría inactiva con ese nombre. Puedes activarla desde la lista.',
+                        ]);
+                    }
                     $this->categoriaDuplicada();
                 }
 
@@ -117,11 +122,28 @@ class OperationalController extends Controller
 
         if (!empty($datos['buscar'])) {
             $buscar = '%'.mb_strtolower(trim($datos['buscar'])).'%';
-            $query->where(function ($query) use ($buscar) {
+            $texto = mb_strtoupper(trim($datos['buscar']));
+            $query->where(function ($query) use ($buscar, $texto) {
                 $query->whereRaw('LOWER(u.name) LIKE ?', [$buscar])
                     ->orWhereRaw('LOWER(a.accion) LIKE ?', [$buscar])
                     ->orWhereRaw('LOWER(a.motivo) LIKE ?', [$buscar])
                     ->orWhereRaw('CAST(a.registro_id AS TEXT) LIKE ?', [$buscar]);
+                if (preg_match('/^(GAS|ENV|PER)-0*(\d+)$/', $texto, $partes)) {
+                    $entidades = ['GAS' => 'gasto', 'ENV' => 'venta', 'PER' => 'perdida'];
+                    $query->orWhere(function ($codigo) use ($partes, $entidades) {
+                        $codigo->where('a.entidad', $entidades[$partes[1]])
+                            ->where('a.registro_id', (int) $partes[2]);
+                    });
+                }
+                if (str_starts_with($texto, 'C-')) {
+                    $query->orWhere(function ($codigo) use ($texto) {
+                        $codigo->where('a.entidad', 'compra')->whereExists(function ($compra) use ($texto) {
+                            $compra->selectRaw('1')->from('compra')
+                                ->whereColumn('compra.id', 'a.registro_id')
+                                ->where('compra.codigo_compra', $texto);
+                        });
+                    });
+                }
             });
         }
 

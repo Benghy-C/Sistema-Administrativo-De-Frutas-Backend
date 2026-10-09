@@ -17,7 +17,7 @@ class ContactWriter
                 $nombre => trim($datos['s_nombre']),
                 'cel' => $datos['s_cel'] ?? null,
                 'telefono' => $datos['s_telefono'] ?? null,
-                'correo' => $datos['s_correo'],
+                'correo' => $datos['s_correo'] ?? '',
                 'descripcion' => $datos['s_descripcion'] ?? '',
             ];
             if ($id) {

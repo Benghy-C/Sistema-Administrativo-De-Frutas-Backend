@@ -215,7 +215,7 @@ class VentaManager
             }
             $pendientes[$calidad] = $nueva - $saldo;
             if ($lotes->sum($campo) < $pendientes[$calidad]) {
-                $this->rechazar('Stock insuficiente para la calidad '.$calidad.'.');
+                $this->rechazar('El stock cambió. Quedan '.$lotes->sum($campo).' cajas de calidad '.$calidad.'. Revisa la cantidad del envío.');
             }
             $cambio[$campo] = $nueva;
             $cambio['preci'.strtolower($calidad)] = $valores['s_precio'.$calidad];

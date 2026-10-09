@@ -46,10 +46,10 @@ class CompraController extends Controller
         $reglas = [
             's_codigo' => 'required|string|max:15',
             's_id_provedor' => 'required|integer|min:1|max:2147483647',
-            's_fecha' => 'required|date_format:Y-m-d',
+            's_fecha' => 'required|date_format:Y-m-d|before_or_equal:'.now('America/Lima')->toDateString(),
             's_observacion' => 'nullable|string|max:5000',
             's_total' => 'required|numeric|min:0|max:999999999.99',
-            's_cost_adi' => 'required|numeric|min:0|max:999999999.99',
+            's_cost_adi' => 'required|numeric|min:0|max:999999999.99|decimal:0,2',
             's_id_fru' => 'required|integer|min:1|max:2147483647',
             's_cantidad' => 'required|integer|min:1|max:2147483647',
             's_cantA' => 'required|integer|min:0|max:2147483647',
@@ -71,9 +71,9 @@ class CompraController extends Controller
 
         foreach (['A', 'B', 'C'] as $calidad) {
             $cajas = (int) $datos['s_cant'.$calidad];
-            if ($edicion && $cajas > 0 && !isset($datos['s_precio'.$calidad])) {
+            if ($cajas > 0 && !isset($datos['s_precio'.$calidad])) {
                 throw ValidationException::withMessages([
-                    's_precio'.$calidad => 'Registra el precio de la calidad '.$calidad.'.',
+                    's_precio'.$calidad => 'Ingresa el precio por caja de la calidad '.$calidad.'.',
                 ]);
             }
             $precio = $cajas > 0 ? ($datos['s_precio'.$calidad] ?? 0) : 0;

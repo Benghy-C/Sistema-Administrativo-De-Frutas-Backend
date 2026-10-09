@@ -45,7 +45,7 @@ class VentaWriter
                 $campo = 'cant'.strtolower($calidad);
 
                 if ($lotes->sum($campo) < $datos['s_cant'.$calidad]) {
-                    $this->rechazar('Stock insuficiente para la calidad '.$calidad.'.');
+                    $this->rechazar('El stock cambió. Quedan '.$lotes->sum($campo).' cajas de calidad '.$calidad.'. Revisa la cantidad del envío.');
                 }
             }
 
