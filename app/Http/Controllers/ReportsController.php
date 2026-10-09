@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\OperationalQueries;
+use App\Services\ReportDetails;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,12 +22,17 @@ class ReportsController extends Controller
                 ->get(['id', 'nombre']),
         ]);
     }
-    public function index(Request $request, OperationalQueries $queries)
-    {
+
+    public function index(
+        Request $request,
+        OperationalQueries $queries,
+        ReportDetails $detalles
+    ) {
         $datos = $this->filtros($request);
         $tipo = $datos['tipo'];
         $query = $queries->reporte($tipo, $datos);
         $columnas = $this->columnas($tipo);
+        $descripcionFiltros = $this->descripcionFiltros($datos);
         $tieneImporte = in_array($tipo, ['compras', 'envios', 'gastos']);
         $resumen = [
             'registros' => (clone $query)->count(),
@@ -42,24 +48,56 @@ class ReportsController extends Controller
         $query->orderByDesc('fecha')->orderByDesc('id');
 
         if (($datos['formato'] ?? '') === 'csv') {
-            return response()->streamDownload(function () use ($query, $columnas) {
+            return response()->streamDownload(function () use (
+                $query, $columnas, $tipo, $detalles, $resumen, $descripcionFiltros
+            ) {
                 $salida = fopen('php://output', 'w');
                 fwrite($salida, "\xEF\xBB\xBF");
-                fputcsv($salida, array_column($columnas, 'titulo'), ';', '"', '');
-                foreach ($query->cursor() as $fila) {
-                    $valores = [];
-                    foreach ($columnas as $columna) {
-                        $valor = $fila->{$columna['clave']} ?? 'Sin registrar';
-                        $texto = (string) $valor;
-                        if (preg_match('/^[=+@\\-\\t\\r]/u', $texto)) {
-                            $texto = "'".$texto;
-                        }
-                        $valores[] = $texto;
-                    }
+                $escribir = function (array $valores) use ($salida) {
+                    $valores = array_map(function ($valor) {
+                        $texto = (string) ($valor ?? 'Sin registrar');
+
+                        return preg_match('/^[=+@\-\t\r]/u', $texto)
+                            ? "'".$texto : $texto;
+                    }, $valores);
                     fputcsv($salida, $valores, ';', '"', '');
+                };
+                $escribir(['Florencia', 'Reporte de '.$tipo]);
+                $escribir(['Filtros', $descripcionFiltros]);
+                $escribir(['Generado', now('America/Lima')->format('Y-m-d H:i:s')]);
+                $escribir(['Unidades', 'Cajas enteras; importes en soles (PEN)']);
+                $escribir([]);
+                $cabeceras = array_column($columnas, 'titulo');
+                $tieneDetalle = in_array($tipo, ['compras', 'envios']);
+                if ($tieneDetalle) {
+                    $cabeceras[] = $tipo === 'compras' ? 'Precios por calidad' : 'Lotes de origen';
+                }
+                $escribir($cabeceras);
+                foreach ($query->lazy(200)->chunk(200) as $grupo) {
+                    $detalles->completar($tipo, $grupo);
+                    foreach ($grupo as $fila) {
+                        $valores = [];
+                        foreach ($columnas as $columna) {
+                            $valores[] = $fila->{$columna['clave']} ?? null;
+                        }
+                        if ($tieneDetalle) {
+                            $valores[] = $detalles->texto($tipo, $fila);
+                        }
+                        $escribir($valores);
+                    }
+                }
+                $escribir([]);
+                $escribir(['Total de registros', $resumen['registros']]);
+                if ($resumen['cajas'] !== null) {
+                    $escribir(['Total de cajas', $resumen['cajas']]);
+                }
+                if ($resumen['importe'] !== null) {
+                    $escribir(['Total en soles (PEN)', $resumen['importe']]);
                 }
                 fclose($salida);
-            }, 'florencia-'.$tipo.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+            }, 'florencia-'.$tipo.'.csv', [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+            ]);
         }
 
         if (($datos['formato'] ?? '') === 'pdf') {
@@ -78,8 +116,12 @@ class ReportsController extends Controller
             $pagina = $query->paginate(5)->toArray();
         }
 
+        $detalles->completar($tipo, $pagina['data']);
+
         return response()->json($pagina + [
             'columnas' => $columnas,
+            'detalle_columnas' => $detalles->columnas($tipo),
+            'filtros_descripcion' => $descripcionFiltros,
             'resumen' => $resumen,
             'nota' => $nota,
             'generado' => now('America/Lima')->format('Y-m-d H:i:s'),
@@ -193,6 +235,38 @@ class ReportsController extends Controller
         return $request->validate($reglas);
     }
 
+    private function descripcionFiltros(array $datos): string
+    {
+        $partes = [
+            'Desde: '.($datos['desde'] ?? 'Inicio'),
+            'Hasta: '.($datos['hasta'] ?? 'Actualidad'),
+        ];
+        foreach (['buscar' => 'Búsqueda', 'calidad' => 'Calidad'] as $campo => $titulo) {
+            if (! empty($datos[$campo])) {
+                $partes[] = $titulo.': '.$datos[$campo];
+            }
+        }
+        if (isset($datos['estado'])) {
+            $partes[] = 'Estado: '.((int) $datos['estado'] === 1
+                ? 'Vigentes' : 'Anulados / cancelados');
+        }
+        $catalogos = [
+            'proveedor_id' => ['proveedores', 'nombre', 'Proveedor'],
+            'cliente_id' => ['clientes', 'nombres', 'Cliente'],
+            'categoria_id' => ['categorias_gasto', 'nombre', 'Categoría'],
+        ];
+        foreach ($catalogos as $campo => [$tabla, $nombre, $titulo]) {
+            if (isset($datos[$campo])) {
+                $valor = $campo === 'categoria_id' && (int) $datos[$campo] === 0
+                    ? 'Sin clasificar'
+                    : DB::table($tabla)->where('id', $datos[$campo])->value($nombre);
+                $partes[] = $titulo.': '.($valor ?? 'Registro '.$datos[$campo]);
+            }
+        }
+
+        return implode(' · ', $partes);
+    }
+
     private function columnas(string $tipo): array
     {
         $campos = match ($tipo) {
@@ -201,8 +275,9 @@ class ReportsController extends Controller
                 ['contacto', 'Proveedor'], ['fruta', 'Fruta'],
                 ['cajas', 'Cajas', 'numero'], ['a', 'A', 'numero'],
                 ['b', 'B', 'numero'], ['c', 'C', 'numero'],
-                ['importe', 'Total', 'dinero'],
-                ['estado', 'Estado'],
+                ['subtotal', 'Subtotal', 'dinero'],
+                ['costos', 'Costos adicionales', 'dinero'],
+                ['importe', 'Total', 'dinero'], ['estado', 'Estado'],
             ],
             'envios' => [
                 ['codigo', 'Envío'], ['fecha', 'Fecha', 'fecha'],

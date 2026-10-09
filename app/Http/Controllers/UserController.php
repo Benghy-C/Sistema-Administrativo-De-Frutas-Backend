@@ -152,6 +152,10 @@ class UserController extends Controller
         $datos = $request->validate([
             's_id_user' => 'required|integer|exists:users,id',
             's_password' => 'required|string|min:8|max:4096|confirmed',
+        ], [
+            's_password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            's_password.max' => 'La contraseña no puede superar 4096 caracteres.',
+            's_password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
         DB::transaction(function () use ($datos) {

@@ -125,7 +125,7 @@ class OperationalController extends Controller
             });
         }
 
-        return response()->json($query->orderByDesc('a.id')->paginate(5));
+        return response()->json($query->orderByDesc('a.id')->paginate(7));
     }
 
     private function categoriaDuplicada(): never

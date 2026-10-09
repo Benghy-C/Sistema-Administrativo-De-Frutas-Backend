@@ -78,9 +78,11 @@ class OperationalQueries
             ->select(
                 'c.id', 'c.codigo_compra as codigo', 'c.fecha',
                 'c.id_proveedor as proveedor_id', 'p.nombre as contacto',
-                'c.precio_total as importe', 'c.estado as estado_id'
+                'c.precio_total as importe', 'c.cost_adici as costos',
+                'c.estado as estado_id'
             )->selectRaw(
                 "STRING_AGG(DISTINCT f.descripcion, ', ') AS fruta, ".
+                'SUM(d.precio_sub_total) AS subtotal, '.
                 'SUM(d.cantidad) AS cajas, SUM(d.canta) AS a, '.
                 'SUM(d.cantb) AS b, SUM(d.cantc) AS c, '.
                 "CASE WHEN c.estado = 1 THEN 'Vigente' ELSE 'Anulado' END AS estado"
