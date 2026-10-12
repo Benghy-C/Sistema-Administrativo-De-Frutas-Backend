@@ -22,12 +22,12 @@ class SessionController extends Controller
         ];
 
         if ($request->query('include') === 'orders') {
-            $input = $request->validate(['date' => ['required', 'date_format:Y-m-d']]);
+            $input = $request->validate(['date' => ['nullable', 'date_format:Y-m-d']]);
             if (in_array('admin', $access['roles'], true)
                 || in_array('read-compra', $access['permissions'], true)) {
                 $profile['initial_orders'] = [
-                    'date' => $input['date'],
-                    'rows' => $orders->forDate($input['date']),
+                    'date' => $input['date'] ?? '',
+                    'rows' => $orders->forDate($input['date'] ?? ''),
                 ];
             }
         }

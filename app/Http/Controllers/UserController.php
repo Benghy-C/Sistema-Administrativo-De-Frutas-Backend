@@ -23,8 +23,15 @@ class UserController extends Controller
         $passwordMatches = Hash::check($credentials['p_password'], $user?->password
             ?? '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.');
 
-        if (! $user || ! $passwordMatches || (int) $user->user_estado !== 1) {
+        if (! $user || ! $passwordMatches) {
             return response()->json(['mensaje' => 'Credenciales inválidas', 'error' => '100'], 401);
+        }
+
+        if ((int) $user->user_estado !== 1) {
+            return response()->json([
+                'mensaje' => 'Tu cuenta está inactiva. Contacta al administrador para recuperar el acceso.',
+                'code' => 'ACCOUNT_INACTIVE', 'error' => '100',
+            ], 401);
         }
 
         $access = $user->apiAccess();
@@ -154,7 +161,7 @@ class UserController extends Controller
             's_password' => 'required|string|min:8|max:4096|confirmed',
         ], [
             's_password.min' => 'La contraseña debe tener al menos 8 caracteres.',
-            's_password.max' => 'La contraseña no puede superar 4096 caracteres.',
+            's_password.max' => 'Elige una contraseña más corta.',
             's_password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 

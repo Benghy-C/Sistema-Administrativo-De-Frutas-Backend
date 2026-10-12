@@ -108,18 +108,21 @@ class CompraController extends Controller
     public function listarCompra(Request $request)
     {
         $datos = $request->validate([
-            's_estado' => 'required',
-            's_fechaDesde' => 'required',
-            's_fechaHasta' => 'required',
+            's_estado' => 'required|integer|in:0,1,2',
+            's_fechaDesde' => 'nullable|date_format:Y-m-d',
+            's_fechaHasta' => 'nullable|date_format:Y-m-d',
         ]);
+        $desde = ($datos['s_fechaDesde'] ?? null) ?: '0001-01-01';
+        $hasta = ($datos['s_fechaHasta'] ?? null) ?: '9999-12-31';
+        if ($desde > $hasta) {
+            throw ValidationException::withMessages([
+                's_fechaHasta' => 'La fecha de inicio no puede ser posterior a la fecha de fin.',
+            ]);
+        }
 
         $respuesta = DB::select(
             'SELECT * FROM public.sp_listar_compra(?,?,?)',
-            [
-                $datos['s_estado'],
-                $datos['s_fechaDesde'],
-                $datos['s_fechaHasta'],
-            ]
+            [$datos['s_estado'], $desde, $hasta]
         );
 
         return response()->json([$respuesta]);

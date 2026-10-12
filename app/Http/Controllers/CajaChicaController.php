@@ -23,7 +23,7 @@ class CajaChicaController extends Controller
             'operacion' => 'required|uuid',
         ], [
             's_monto.gt' => 'El monto debe ser mayor a cero.',
-            's_monto.decimal' => 'El monto admite hasta dos decimales.',
+            's_monto.decimal' => 'Ingresa un monto válido.',
             's_desc.required' => 'Escribe la descripción del gasto.',
             's_fecha.before_or_equal' => 'La fecha y hora del gasto no pueden ser futuras.',
             'categoria_id.required' => 'Selecciona la categoría del gasto.',

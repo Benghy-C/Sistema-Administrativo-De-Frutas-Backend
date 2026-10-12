@@ -16,7 +16,7 @@ return [
     'exists' => 'El registro seleccionado ya no está disponible. Vuelve a consultarlo.',
     'unique' => ':Attribute ya se encuentra registrado.',
     'regex' => 'Revisa el formato de :attribute.',
-    'decimal' => ':Attribute admite hasta dos decimales.',
+    'decimal' => 'Ingresa un importe válido para :attribute.',
     'confirmed' => 'Las contraseñas no coinciden.',
     'uuid' => 'No se pudo identificar la operación. Actualiza la página e inténtalo de nuevo.',
     'array' => 'Revisa los elementos de :attribute.',
@@ -27,8 +27,8 @@ return [
         'array' => 'Agrega al menos :min elemento en :attribute.',
     ],
     'max' => [
-        'numeric' => ':Attribute no puede superar :max.',
-        'string' => ':Attribute admite hasta :max caracteres.',
+        'numeric' => 'Revisa :attribute. El valor es demasiado alto.',
+        'string' => 'Acorta :attribute.',
         'array' => ':Attribute admite hasta :max elementos.',
     ],
     'attributes' => [

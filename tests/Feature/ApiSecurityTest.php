@@ -67,7 +67,10 @@ class ApiSecurityTest extends TestCase
         $this->withToken($legacy)->getJson('/api/user')->assertUnauthorized();
         $user->user_estado = 0;
         $user->save();
-        $this->postJson('/api/auth/login', ['p_email' => $user->email, 'p_password' => 'Test-password-123'])->assertUnauthorized();
+        $this->postJson('/api/auth/login', ['p_email' => $user->email, 'p_password' => 'incorrecta'])
+            ->assertUnauthorized()->assertJsonMissingPath('code');
+        $this->postJson('/api/auth/login', ['p_email' => $user->email, 'p_password' => 'Test-password-123'])
+            ->assertUnauthorized()->assertJsonPath('code', 'ACCOUNT_INACTIVE');
     }
 
     public function test_changed_password_invalidates_existing_tokens(): void

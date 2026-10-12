@@ -95,7 +95,7 @@ class PerdidaController extends Controller
             'cantidad.integer' => 'La cantidad debe ser un número entero de cajas.',
             'fecha.before_or_equal' => 'La fecha de la pérdida no puede ser futura.',
             'motivo.required' => 'Escribe el motivo de la pérdida.',
-            'motivo.min' => 'Escribe un motivo de al menos tres caracteres.',
+            'motivo.min' => 'Escribe un motivo que explique la pérdida.',
         ]);
 
         return response()->json($writer->crear($datos, (int) $request->user()->id));
